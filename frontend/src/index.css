@@ -405,6 +405,107 @@ nav a:hover, nav a.active {
   color: var(--text-primary);
 }
 
+/* ── Server Status Bar ───────────────────────────────────────────────────── */
+.server-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Shared pill base */
+.server-status-pill,
+.server-clock-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 99px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: all 0.4s ease;
+}
+
+/* Online / Connected */
+.server-status-pill.status-online {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.06);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.15), inset 0 0 8px rgba(74, 222, 128, 0.04);
+}
+
+/* Offline */
+.server-status-pill.status-offline {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.06);
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.15), inset 0 0 8px rgba(248, 113, 113, 0.04);
+}
+
+/* Checking */
+.server-status-pill.status-checking {
+  color: var(--text-muted);
+  border-color: var(--panel-border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Clock pill */
+.server-clock-pill {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+  background: rgba(56, 189, 248, 0.06);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Icons */
+.status-icon,
+.clock-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+/* Spinner animation for checking state */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .server-status-pill.status-online {
+  color: #16a34a;
+  border-color: rgba(22, 163, 74, 0.3);
+  background: rgba(22, 163, 74, 0.06);
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.1);
+}
+
+[data-theme="light"] .server-status-pill.status-offline {
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.3);
+  background: rgba(220, 38, 38, 0.06);
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.1);
+}
+
+[data-theme="light"] .server-clock-pill {
+  color: #0284c7;
+  border-color: rgba(2, 132, 199, 0.25);
+  background: rgba(2, 132, 199, 0.06);
+  box-shadow: 0 0 6px rgba(2, 132, 199, 0.08);
+}
+
+/* Hide status bar on very small screens */
+@media (max-width: 640px) {
+  .server-status-bar {
+    display: none;
+  }
+}
+
 /* Hero Section */
 .hero {
   padding: 6rem 2rem 4rem;

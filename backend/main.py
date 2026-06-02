@@ -94,6 +94,16 @@ class ChatRequest(BaseModel):
     history: Optional[List[ChatMessage]] = []
 
 
+# ── Health check endpoint ─────────────────────────────────────────────────────
+import time as _time
+_SERVER_START = _time.time()
+
+@app.get("/api/health")
+def health_check():
+    uptime_seconds = int(_time.time() - _SERVER_START)
+    return {"status": "ok", "uptime_seconds": uptime_seconds}
+
+
 # ── FAQ endpoint ─────────────────────────────────────────────────────────────
 @app.get("/api/faqs")
 def get_faqs(lang: str = "en"):

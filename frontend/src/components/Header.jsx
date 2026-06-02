@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import ServerStatus from './ServerStatus';
 
 function Header({ onVoiceToggle, theme, onThemeToggle, lang, onLangToggle }) {
   return (
@@ -9,6 +10,10 @@ function Header({ onVoiceToggle, theme, onThemeToggle, lang, onLangToggle }) {
           <div className="logo-icon"></div>
           <span>Vicharanashala Internship</span>
         </div>
+
+        {/* Server status pills — centered in header */}
+        <ServerStatus />
+
         <nav>
           <NavLink to="/overview" className={({ isActive }) => isActive ? 'active' : ''}>
             Overview
