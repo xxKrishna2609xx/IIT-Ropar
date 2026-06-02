@@ -7,7 +7,7 @@
 [![Backend](https://img.shields.io/badge/⚙️_API-Render-46E3B7?style=for-the-badge)](https://vicharanashala-internship.onrender.com)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
-[![Gemini](https://img.shields.io/badge/Gemini_2.5_Flash-AI-4285F4?style=for-the-badge&logo=google)](https://ai.google.dev)
+[![Gemini](https://img.shields.io/badge/Gemini_2.0_Flash-AI-4285F4?style=for-the-badge&logo=google)](https://ai.google.dev)
 
 </div>
 
@@ -19,7 +19,7 @@ A full-stack web application built for the **Vicharanashala Internship Programme
 
 The portal provides:
 - 📚 A comprehensive, searchable **FAQ system** with bilingual support (English / Hindi)
-- 🤖 **Yaksha** — an AI assistant powered by Gemini 2.5 Flash, trained on the full internship knowledge base
+- 🤖 **Yaksha** — an AI assistant powered by Gemini 2.0 Flash, trained on the full internship knowledge base
 - 👍 A **voting system** so interns can upvote/downvote FAQ helpfulness
 - 📊 A live **server status** indicator and real-time clock
 - 🌙 **Dark / Light mode** toggle with persistent preference
@@ -32,7 +32,7 @@ The portal provides:
 |---|---|
 | **Frontend** | React 19 + Vite 8 + React Router v7 |
 | **Backend** | Python 3 + FastAPI + Uvicorn |
-| **AI / Chat** | Google Gemini 2.5 Flash (`google-genai` SDK) |
+| **AI / Chat** | Google Gemini 2.0 Flash (`google-genai` SDK) |
 | **Styling** | Vanilla CSS (glassmorphism dark/light theme) |
 | **Deployment** | Vercel (frontend) · Render (backend) |
 | **Data** | JSON flat-file store (`faqs.json`, `faqs_hi.json`, `votes.json`) |
@@ -82,7 +82,7 @@ IIT-Ropar/
 - Expand All / Collapse All controls
 
 ### 🤖 Yaksha AI Assistant
-- Powered by **Gemini 2.5 Flash** with the full FAQ as its knowledge base
+- Powered by **Gemini 2.0 Flash** with the full FAQ as its knowledge base
 - Maintains conversation history across turns
 - Rate-limit aware — graceful 5-second cooldown between messages
 - Suggested questions on first open

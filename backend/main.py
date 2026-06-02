@@ -61,7 +61,7 @@ FAQ KNOWLEDGE BASE:
 
 # ── Gemini client (new google-genai SDK) ─────────────────────────────────────
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-YAKSHA_MODEL  = "gemini-2.5-flash"  # stable model for google-genai SDK (v1beta endpoint)
+YAKSHA_MODEL  = "gemini-2.0-flash"  # stable model for google-genai SDK (v1beta endpoint)
 
 # ── Initialize votes file ────────────────────────────────────────────────────
 if not os.path.exists(VOTES_PATH):
