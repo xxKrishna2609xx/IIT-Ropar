@@ -18,7 +18,9 @@ function Chatbot({ apiUrl }) {
   const [messages, setMessages] = useState([INITIAL_GREETING]);
   const [input, setInput]       = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [cooldown, setCooldown] = useState(false);
   const bodyRef                 = useRef(null);
+  const cooldownTimer           = useRef(null);
 
   // Auto-scroll chat body whenever messages change
   useEffect(() => {
@@ -26,6 +28,9 @@ function Chatbot({ apiUrl }) {
       bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
     }
   }, [messages, isTyping, isOpen]);
+
+  // Clean up cooldown timer on unmount
+  useEffect(() => () => clearTimeout(cooldownTimer.current), []);
 
   // Build conversation history for the backend (excludes the very first system greeting)
   const buildHistory = (currentMessages) => {
@@ -40,6 +45,8 @@ function Chatbot({ apiUrl }) {
 
   // Core chat query sender — used by both the form submit and suggested chip clicks
   const sendChatQuery = async (query) => {
+    if (isTyping || cooldown) return;   // block concurrent / rapid requests
+
     // Optimistically add user message to UI
     const userMsg = { id: Date.now().toString(), text: query, sender: 'user' };
     const updatedMessages = [...messages, userMsg];
@@ -57,6 +64,10 @@ function Chatbot({ apiUrl }) {
         }),
       });
 
+      if (response.status === 429) {
+        throw new Error('Yaksha is getting a lot of questions right now — please wait a few seconds and try again. 🙏');
+      }
+
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.detail || `Server error ${response.status}`);
@@ -72,12 +83,15 @@ function Chatbot({ apiUrl }) {
         ...prev,
         {
           id: Date.now().toString(),
-          text: `Sorry, I couldn't reach the server. ${err.message}`,
+          text: err.message,
           sender: 'error',
         },
       ]);
     } finally {
       setIsTyping(false);
+      // 5-second cooldown to stay within Gemini free-tier rate limit (15 RPM)
+      setCooldown(true);
+      cooldownTimer.current = setTimeout(() => setCooldown(false), 5000);
     }
   };
 
@@ -92,10 +106,13 @@ function Chatbot({ apiUrl }) {
     setMessages([INITIAL_GREETING]);
     setInput('');
     setIsTyping(false);
+    setCooldown(false);
+    clearTimeout(cooldownTimer.current);
   };
 
   // Show suggested chips only when it's just the initial greeting and Yaksha isn't typing
   const showSuggestions = messages.length === 1 && !isTyping;
+  const isBusy = isTyping || cooldown;
 
   return (
     <div className="chatbot-widget">
@@ -157,6 +174,7 @@ function Chatbot({ apiUrl }) {
                     key={idx}
                     className="chat-suggested-chip"
                     onClick={() => sendChatQuery(q)}
+                    disabled={isBusy}
                   >
                     {q}
                   </button>
@@ -182,9 +200,9 @@ function Chatbot({ apiUrl }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               autoComplete="off"
-              disabled={isTyping}
+              disabled={isBusy}
             />
-            <button type="submit" className="send-btn" disabled={isTyping}>
+            <button type="submit" className="send-btn" disabled={isBusy}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"></line>
                 <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
