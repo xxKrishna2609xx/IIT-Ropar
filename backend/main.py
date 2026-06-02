@@ -61,7 +61,7 @@ FAQ KNOWLEDGE BASE:
 
 # ── Gemini client (new google-genai SDK) ─────────────────────────────────────
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-YAKSHA_MODEL  = "gemini-2.5-flash"  # best quality, free tier
+YAKSHA_MODEL  = "gemini-1.5-flash"  # stable, globally available on free tier
 
 # ── Initialize votes file ────────────────────────────────────────────────────
 if not os.path.exists(VOTES_PATH):
@@ -188,7 +188,6 @@ async def chat(req: ChatRequest):
                 system_instruction=YAKSHA_SYSTEM_PROMPT,
                 temperature=0.3,        # focused, factual responses
                 max_output_tokens=1024,
-                thinking_config=types.ThinkingConfig(thinking_budget=0),  # disable thinking for fast chat
             ),
             history=gemini_history,
         )
