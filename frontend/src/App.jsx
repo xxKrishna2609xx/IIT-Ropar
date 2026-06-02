@@ -5,7 +5,7 @@ import Overview from './pages/Overview';
 import FAQPage from './pages/FAQPage';
 import VoiceAssistant from './components/VoiceAssistant';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 const THEME_KEY = 'vicharanashala_theme';
 const LANG_KEY = 'vicharanashala_lang';
 

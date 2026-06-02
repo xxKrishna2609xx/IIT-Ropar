@@ -71,13 +71,34 @@ if not os.path.exists(VOTES_PATH):
 # ── FastAPI app ──────────────────────────────────────────────────────────────
 app = FastAPI(title="Vicharanashala FAQ API")
 
+
+# ── CORS origin validator ────────────────────────────────────────────────────
+_VERCEL_ORIGIN = re.compile(
+    r"^https://[\w\-]+(\.vercel\.app)$"           # any *.vercel.app subdomain
+)
+
+def _is_allowed_origin(origin: str) -> bool:
+    if origin in (
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:4173",   # vite preview port
+    ):
+        return True
+    return bool(_VERCEL_ORIGIN.match(origin))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origin_regex=r"https://[\w\-]+(\.vercel\.app)$",
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:4173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # ── Pydantic models ──────────────────────────────────────────────────────────
 class VoteRequest(BaseModel):

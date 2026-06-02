@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FAQItem from '../components/FAQItem';
 import Chatbot from '../components/Chatbot';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 const USER_VOTES_KEY = 'faq_user_votes';
 const TOP_FAQ_IDS = ['q-1-1', 'q-2-1', 'q-3-3', 'q-4-1'];
 
