@@ -9,6 +9,7 @@ import re
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+import requests as http_requests
 
 # ── Load environment variables ───────────────────────────────────────────────
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
@@ -59,15 +60,10 @@ FAQ KNOWLEDGE BASE:
 {FAQ_KNOWLEDGE_BASE}
 """
 
-# ── Gemini client (new google-genai SDK) ─────────────────────────────────────
-# Force global endpoint explicitly — prevents "User location not supported"
-# errors when the server is deployed in a non-US region (e.g. Render/Frankfurt).
-gemini_client = genai.Client(
-    api_key=GEMINI_API_KEY,
-    http_options=types.HttpOptions(
-        base_url="https://generativelanguage.googleapis.com"
-    ),
-)
+# ── Gemini API config ───────────────────────────────────────────────────────────────────
+# Always call the global endpoint directly so Render's server region
+# doesn't trigger "User location not supported" errors.
+GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 YAKSHA_MODEL    = "gemini-2.5-flash"        # primary
 YAKSHA_FALLBACK = "gemini-2.5-flash-lite"   # fallback if primary quota exhausted
 
@@ -177,48 +173,49 @@ def post_vote(req: VoteRequest):
 # ── Agentic Chat — Yaksha powered by Gemini ──────────────────────────────────
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
-    # Build Gemini-format conversation history from prior turns
-    gemini_history: List[types.Content] = []
+    # Build Gemini REST API conversation history
+    contents = []
     for msg in (req.history or []):
         if msg.role in ("user", "model") and msg.text.strip():
-            gemini_history.append(
-                types.Content(
-                    role=msg.role,
-                    parts=[types.Part(text=msg.text)]
-                )
-            )
+            contents.append({"role": msg.role, "parts": [{"text": msg.text}]})
+    # Append current user query
+    contents.append({"role": "user", "parts": [{"text": req.query}]})
 
-    chat_config = types.GenerateContentConfig(
-        system_instruction=YAKSHA_SYSTEM_PROMPT,
-        temperature=0.3,
-        max_output_tokens=1024,
-        thinking_config=types.ThinkingConfig(thinking_budget=0),
-    )
+    payload = {
+        "system_instruction": {"parts": [{"text": YAKSHA_SYSTEM_PROMPT}]},
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": 1024,
+        },
+    }
 
-    # Try primary model, fall back to lite if quota is exhausted
+    # Try primary model, fall back to lite on quota errors
     models_to_try = [YAKSHA_MODEL, YAKSHA_FALLBACK]
-    last_error = None
 
     for model in models_to_try:
         try:
-            chat_session = gemini_client.chats.create(
-                model=model,
-                config=chat_config,
-                history=gemini_history,
-            )
-            response = chat_session.send_message(req.query)
-            return {"answer": response.text.strip()}
-        except Exception as e:
-            err_msg = str(e)
-            print(f"[Yaksha] {model} error: {err_msg[:200]}")
-            last_error = err_msg
-            # Only fall back on quota errors
-            if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
-                continue
-            # Any other error — raise immediately
-            raise HTTPException(status_code=500, detail=f"Yaksha error: {err_msg}")
+            url = f"{GEMINI_API_BASE}/models/{model}:generateContent?key={GEMINI_API_KEY}"
+            resp = http_requests.post(url, json=payload, timeout=30)
 
-    # All models exhausted
+            if resp.status_code == 429:
+                print(f"[Yaksha] {model} quota exhausted, trying fallback...")
+                continue
+
+            if not resp.ok:
+                detail = resp.json().get("error", {}).get("message", resp.text)
+                raise HTTPException(status_code=500, detail=f"Yaksha error: {detail}")
+
+            answer = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+            return {"answer": answer.strip()}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"[Yaksha] {model} unexpected error: {e}")
+            raise HTTPException(status_code=500, detail=f"Yaksha error: {str(e)}")
+
+    # All models quota-exhausted
     raise HTTPException(
         status_code=429,
         detail="Yaksha is currently unavailable due to API quota limits. Please try again later."
