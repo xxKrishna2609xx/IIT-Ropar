@@ -60,9 +60,16 @@ FAQ KNOWLEDGE BASE:
 """
 
 # ── Gemini client (new google-genai SDK) ─────────────────────────────────────
-gemini_client  = genai.Client(api_key=GEMINI_API_KEY)
-YAKSHA_MODEL   = "gemini-2.5-flash"        # primary
-YAKSHA_FALLBACK = "gemini-2.5-flash-lite"  # fallback if primary quota exhausted
+# Force global endpoint explicitly — prevents "User location not supported"
+# errors when the server is deployed in a non-US region (e.g. Render/Frankfurt).
+gemini_client = genai.Client(
+    api_key=GEMINI_API_KEY,
+    http_options=types.HttpOptions(
+        base_url="https://generativelanguage.googleapis.com"
+    ),
+)
+YAKSHA_MODEL    = "gemini-2.5-flash"        # primary
+YAKSHA_FALLBACK = "gemini-2.5-flash-lite"   # fallback if primary quota exhausted
 
 # ── Initialize votes file ────────────────────────────────────────────────────
 if not os.path.exists(VOTES_PATH):
