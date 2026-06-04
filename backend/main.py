@@ -60,8 +60,9 @@ FAQ KNOWLEDGE BASE:
 """
 
 # ── Gemini client (new google-genai SDK) ─────────────────────────────────────
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-YAKSHA_MODEL  = "gemini-2.0-flash"  # stable model for google-genai SDK (v1beta endpoint)
+gemini_client  = genai.Client(api_key=GEMINI_API_KEY)
+YAKSHA_MODEL   = "gemini-2.5-flash"        # primary
+YAKSHA_FALLBACK = "gemini-2.5-flash-lite"  # fallback if primary quota exhausted
 
 # ── Initialize votes file ────────────────────────────────────────────────────
 if not os.path.exists(VOTES_PATH):
@@ -169,44 +170,52 @@ def post_vote(req: VoteRequest):
 # ── Agentic Chat — Yaksha powered by Gemini ──────────────────────────────────
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
-    try:
-        # Build Gemini-format conversation history from prior turns
-        gemini_history: List[types.Content] = []
-        for msg in (req.history or []):
-            if msg.role in ("user", "model") and msg.text.strip():
-                gemini_history.append(
-                    types.Content(
-                        role=msg.role,
-                        parts=[types.Part(text=msg.text)]
-                    )
+    # Build Gemini-format conversation history from prior turns
+    gemini_history: List[types.Content] = []
+    for msg in (req.history or []):
+        if msg.role in ("user", "model") and msg.text.strip():
+            gemini_history.append(
+                types.Content(
+                    role=msg.role,
+                    parts=[types.Part(text=msg.text)]
                 )
-
-        # Create a chat session with system prompt + history
-        chat_session = gemini_client.chats.create(
-            model=YAKSHA_MODEL,
-            config=types.GenerateContentConfig(
-                system_instruction=YAKSHA_SYSTEM_PROMPT,
-                temperature=0.3,        # focused, factual responses
-                max_output_tokens=1024,
-            ),
-            history=gemini_history,
-        )
-
-        # Send the current user message and get Yaksha's answer
-        response = chat_session.send_message(req.query)
-        answer   = response.text.strip()
-
-        return {"answer": answer}
-
-    except Exception as e:
-        err_msg = str(e)
-        # Friendly rate-limit message instead of raw error
-        if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
-            raise HTTPException(
-                status_code=429,
-                detail="Yaksha is receiving too many questions right now. Please wait a moment and try again."
             )
-        raise HTTPException(status_code=500, detail=f"Yaksha error: {err_msg}")
+
+    chat_config = types.GenerateContentConfig(
+        system_instruction=YAKSHA_SYSTEM_PROMPT,
+        temperature=0.3,
+        max_output_tokens=1024,
+        thinking_config=types.ThinkingConfig(thinking_budget=0),
+    )
+
+    # Try primary model, fall back to lite if quota is exhausted
+    models_to_try = [YAKSHA_MODEL, YAKSHA_FALLBACK]
+    last_error = None
+
+    for model in models_to_try:
+        try:
+            chat_session = gemini_client.chats.create(
+                model=model,
+                config=chat_config,
+                history=gemini_history,
+            )
+            response = chat_session.send_message(req.query)
+            return {"answer": response.text.strip()}
+        except Exception as e:
+            err_msg = str(e)
+            print(f"[Yaksha] {model} error: {err_msg[:200]}")
+            last_error = err_msg
+            # Only fall back on quota errors
+            if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
+                continue
+            # Any other error — raise immediately
+            raise HTTPException(status_code=500, detail=f"Yaksha error: {err_msg}")
+
+    # All models exhausted
+    raise HTTPException(
+        status_code=429,
+        detail="Yaksha is currently unavailable due to API quota limits. Please try again later."
+    )
 
 
 if __name__ == "__main__":
