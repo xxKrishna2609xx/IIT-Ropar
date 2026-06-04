@@ -17,7 +17,7 @@
 
 **Frontend:** https://iit-ropar-seven.vercel.app
 
-**Backend API:** https://vicharanashala-internship.onrender.com
+**Backend API:** https://iit-ropar.onrender.com
 
 ---
 
